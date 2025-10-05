@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+.env
+.venv/
+.env.local
+accounts.json
+proxy.txt
+2captcha_key.txt
+.DS_Store
+.idea/
+.vscode/
