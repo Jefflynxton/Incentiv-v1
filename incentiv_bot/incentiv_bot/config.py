@@ -12,6 +12,17 @@ class BotConfig:
     accounts_file: str
     proxy_file: Optional[str]
 
+    # API and site
+    api_base: str
+    site_url: Optional[str]
+    user_agent: Optional[str]
+
+    # Captcha
+    turnstile_sitekey: Optional[str]
+    captcha_api_key: Optional[str]
+    captcha_field: str
+
+    # Amounts
     tcent_transfer: float
     smpl_transfer: float
     bull_transfer: float
@@ -38,6 +49,14 @@ def load_env(env_path: Optional[str] = None) -> BotConfig:
     proxy_file_raw = os.getenv("PROXY_FILE", "").strip()
     proxy_file = proxy_file_raw if proxy_file_raw else None
 
+    api_base = os.getenv("API_BASE", "https://api.testnet.incentiv.io").strip()
+    site_url = os.getenv("SITE_URL", "https://testnet.incentiv.io/login").strip() or None
+    user_agent = os.getenv("USER_AGENT", "").strip() or None
+
+    turnstile_sitekey = os.getenv("TURNSTILE_SITEKEY", "").strip() or None
+    captcha_api_key = os.getenv("CAPTCHA_API_KEY", "").strip() or None
+    captcha_field = os.getenv("CAPTCHA_FIELD", "cf-turnstile-response").strip() or "cf-turnstile-response"
+
     def f(name: str, default: float) -> float:
         raw = os.getenv(name)
         return float(raw) if raw else default
@@ -47,6 +66,12 @@ def load_env(env_path: Optional[str] = None) -> BotConfig:
         chain_id=chain_id,
         accounts_file=accounts_file,
         proxy_file=proxy_file,
+        api_base=api_base,
+        site_url=site_url,
+        user_agent=user_agent,
+        turnstile_sitekey=turnstile_sitekey,
+        captcha_api_key=captcha_api_key,
+        captcha_field=captcha_field,
         tcent_transfer=f("TCENT_TRANSFER_AMOUNT", 0.1),
         smpl_transfer=f("SMPL_TRANSFER_AMOUNT", 0.1),
         bull_transfer=f("BULL_TRANSFER_AMOUNT", 0.1),
