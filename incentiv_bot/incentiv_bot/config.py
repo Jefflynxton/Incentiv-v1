@@ -16,6 +16,7 @@ class BotConfig:
     api_base: str
     site_url: Optional[str]
     user_agent: Optional[str]
+    auth_bearer: Optional[str]
 
     # Captcha
     turnstile_sitekey: Optional[str]
@@ -52,10 +53,11 @@ def load_env(env_path: Optional[str] = None) -> BotConfig:
     api_base = os.getenv("API_BASE", "https://api.testnet.incentiv.io").strip()
     site_url = os.getenv("SITE_URL", "https://testnet.incentiv.io/login").strip() or None
     user_agent = os.getenv("USER_AGENT", "").strip() or None
+    auth_bearer = os.getenv("AUTH_BEARER", "").strip() or None
 
     turnstile_sitekey = os.getenv("TURNSTILE_SITEKEY", "").strip() or None
     captcha_api_key = os.getenv("CAPTCHA_API_KEY", "").strip() or None
-    captcha_field = os.getenv("CAPTCHA_FIELD", "cf-turnstile-response").strip() or "cf-turnstile-response"
+    captcha_field = os.getenv("CAPTCHA_FIELD", "verificationToken").strip() or "verificationToken"
 
     def f(name: str, default: float) -> float:
         raw = os.getenv(name)
@@ -69,6 +71,7 @@ def load_env(env_path: Optional[str] = None) -> BotConfig:
         api_base=api_base,
         site_url=site_url,
         user_agent=user_agent,
+        auth_bearer=auth_bearer,
         turnstile_sitekey=turnstile_sitekey,
         captcha_api_key=captcha_api_key,
         captcha_field=captcha_field,

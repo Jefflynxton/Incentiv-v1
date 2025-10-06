@@ -13,11 +13,18 @@ class IncentivApi:
         params = {"type": type, "address": address}
         return await self.client.get_json("/api/user/challenge", params=params)
 
-    async def login(self, address: str, signature: str, type: str = "BROWSER_EXTENSION"):
-        body = {"address": address, "signature": signature, "type": type}
+    async def login(self, challenge: str, signature: str, type: str = "BROWSER_EXTENSION"):
+        body = {"challenge": challenge, "signature": signature, "type": type}
         res = await self.client.post_json("/api/user/login", json_body=body)
         if isinstance(res, dict):
-            token = res.get("token") or res.get("accessToken") or res.get("jwt")
+            # token can be at top level or nested in result
+            token = (
+                res.get("token")
+                or res.get("accessToken")
+                or res.get("jwt")
+                or (res.get("result") or {}).get("token")
+                or (res.get("result") or {}).get("accessToken")
+            )
             if token:
                 self.client.set_bearer_token(token)
                 self.token = token

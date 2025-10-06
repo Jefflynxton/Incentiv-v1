@@ -51,6 +51,9 @@ async def run_api_action(args) -> None:
         referer=referer,
         origin=origin,
     ) as http:
+        # Preload bearer if provided in env
+        if cfg.auth_bearer:
+            http.set_bearer_token(cfg.auth_bearer)
         api = IncentivApi(cfg.api_base, http)
 
         if args.command == "api-badge":
@@ -80,13 +83,13 @@ async def run_api_action(args) -> None:
 
         if args.command == "api-login":
             # fetch challenge
-            challenge = await api.challenge(args.address)
-            # extract message heuristically
-            message = None
-            if isinstance(challenge, dict):
-                message = challenge.get("message") or challenge.get("data", {}).get("message") or challenge.get("payload")
-            if not isinstance(message, str) or not message.strip():
-                raise SystemExit(f"Cannot extract challenge message from: {challenge}")
+            challenge_res = await api.challenge(args.address)
+            challenge = None
+            if isinstance(challenge_res, dict):
+                result = challenge_res.get("result") or {}
+                challenge = result.get("message") or result.get("challenge") or result.get("payload")
+            if not isinstance(challenge, str) or not challenge.strip():
+                raise SystemExit(f"Cannot extract challenge from: {challenge_res}")
 
             # sign with matching wallet
             if not Path(cfg.accounts_file).exists():
@@ -94,14 +97,14 @@ async def run_api_action(args) -> None:
             w3 = make_web3(cfg.rpc_url, cfg.chain_id, proxy_url)
             wallets = WalletManager(w3, cfg.accounts_file)
             signer = choose_wallet_for_address(wallets, args.address)
-            sig = signer.account.sign_message(encode_defunct(text=message)).signature.hex()
+            sig = signer.account.sign_message(encode_defunct(text=challenge)).signature.hex()
 
-            res = await api.login(args.address, sig)
+            res = await api.login(challenge, sig)
             print(res)
             return
 
         if args.command == "api-faucet":
-            captcha_field = args.captcha_field or cfg.captcha_field
+            captcha_field = args.captcha_field or cfg.captcha_field or "verificationToken"
             if args.solve:
                 if not cfg.captcha_api_key or not cfg.turnstile_sitekey or not cfg.site_url:
                     raise SystemExit("Missing CAPTCHA_API_KEY or TURNSTILE_SITEKEY or SITE_URL for solving")
@@ -146,7 +149,6 @@ def main() -> None:
     args = parser.parse_args()
 
     if not args.command:
-        # keep the original info action for quick check
         cfg = load_env(args.env)
         w3 = make_web3(cfg.rpc_url, cfg.chain_id, resolve_proxy(cfg.proxy_file, args.proxy))
         wallets = WalletManager(w3, cfg.accounts_file)
